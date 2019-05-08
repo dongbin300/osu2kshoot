@@ -1,13 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
 using System.IO;
+using System.Text;
+using System.Windows.Forms;
+using System.Threading;
 
 namespace osu2kshoot
 {
@@ -195,7 +190,7 @@ namespace osu2kshoot
             kshoot.Illustrator = illustratorTextBox.Text;
             kshoot.Difficulty = difficultyComboBox.SelectedIndex;
             if (autoLevelCheckBox.Checked)
-                kshoot.Level = (int)(osu.NoteCount * 10000 / (double)(osu.LastNoteTiming - osu.FirstNoteTiming) / keyCount);
+                kshoot.Level = (int)(osu.NoteCount * 10000 / (double)(osu.LastNoteTiming - osu.FirstNoteTiming) / keyCount + 6);
             else
                 kshoot.Level = int.Parse(levelTextBox.Text);
             kshoot.T = osu.BPM;
@@ -214,14 +209,14 @@ namespace osu2kshoot
             kshoot.Ver = "167";
             kshoot.Beat = "4/4";
 
-            /*FileStream fs2 = new FileStream($"[converted]{kshoot.Title} {osu.BeatMapVersion}.ksh", FileMode.Create);
+            FileStream fs2 = new FileStream($"[converted]{kshoot.Title} {osu.BeatMapVersion}.ksh", FileMode.Create);
             BinaryWriter bw = new BinaryWriter(fs2, Encoding.UTF8);
             bw.Write(new byte[] { 0xEF, 0xBB, 0xBF });
             bw.Flush();
             bw.Close();
-            fs2.Close();*/
+            fs2.Close();
 
-            FileStream fs3 = new FileStream($"[converted]{kshoot.Title} {osu.BeatMapVersion}.ksh", FileMode.Create);
+            FileStream fs3 = new FileStream($"[converted]{kshoot.Title} {osu.BeatMapVersion}.ksh", FileMode.Open);
             StreamWriter sw = new StreamWriter(fs3, Encoding.UTF8);
             sw.WriteLine($"title={kshoot.Title}");
             sw.WriteLine($"artist={kshoot.Artist}");
@@ -375,20 +370,24 @@ namespace osu2kshoot
 
                         knobLength[0]--;
                         knobLength[1]--;
+                        //string knobString = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmno:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::";
+                        string knobString = "0AKWeo:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::";
+                        char knobPosition = knobString[random.Next(DateTime.Now.Millisecond)%knobString.Length];
+                        Thread.Sleep(1);
                         // 노브 버튼이 나오고 노브 중 하나라도 유지가 안되고 있으면
                         if (button[3] && (knobLength[0] < 0 || knobLength[1] < 0))
                         {
-                            if (knobLength[0] >= 0 && knobLength[1] < 0)
+                            if (knobLength[0] >= 0 && knobLength[1] < 0) // 오른쪽 노브가 없을 때
                             {
-                                str += knobLength[0] == 0 ? "oo" : ":o";
+                                str += knobLength[0] == 0 ? "oo" : $"{knobPosition}o";
                                 knobLength[1] = random.Next(14) + 2;
                             }
-                            else if (knobLength[0] < 0 && knobLength[1] >= 0)
+                            else if (knobLength[0] < 0 && knobLength[1] >= 0) // 왼쪽 노브가 없을 때
                             {
-                                str += knobLength[1] == 0 ? "00" : "0:";
+                                str += knobLength[1] == 0 ? "00" : $"0{knobPosition}";
                                 knobLength[0] = random.Next(14) + 2;
                             }
-                            else
+                            else // 양 노브가 없을 때
                             {
                                 int num = random.Next(2);
                                 str += num == 0 ? "0-" : "-o";
@@ -399,8 +398,8 @@ namespace osu2kshoot
                         // 노브 버튼이 안나오면
                         else
                         {
-                            str += knobLength[0] > 0 ? ":" : knobLength[0] == 0 ? "o" : "-";
-                            str += knobLength[1] > 0 ? ":" : knobLength[1] == 0 ? "0" : "-";
+                            str += knobLength[0] > 0 ? $"{knobPosition}" : knobLength[0] == 0 ? "o" : "-";
+                            str += knobLength[1] > 0 ? $"{knobPosition}" : knobLength[1] == 0 ? "0" : "-";
                         }
                         return str;
                 }
