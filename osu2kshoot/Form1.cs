@@ -38,6 +38,7 @@ namespace osu2kshoot
         {
             try
             {
+                rgo.Notes.Clear();
                 if (fourRadioButton.Checked)
                     Convert(osuDirectoryTextBox.Text, 4, ConvertOptions.OnlyButton);
                 if (sevenRadioButton.Checked)
@@ -68,13 +69,17 @@ namespace osu2kshoot
             bool hitObjects = false;
             bool first = true;
             osu.LongNoteEndTiming = new int[keyCount];
+            int button = 0;
+            int buttonValue = 0;
 
+            osu.NoteCount = 0;
             for (int i = 0; sr.Peek() >= 0; i++)
             {
                 line = sr.ReadLine();
 
                 if (hitObjects)
                 {
+                    osu.NoteCount++;
                     string[] obj = line.Split(',');
                     if (first) // 첫 노트는 타이밍을 오프셋으로 설정
                     {
@@ -82,8 +87,17 @@ namespace osu2kshoot
                         first = false;
                     }
 
-                    int button = keyCount == 4 ? (int.Parse(obj[0]) / 32 - 2) / 4 : (int.Parse(obj[0]) / 36 - 1) / 2;
-                    int buttonValue = (int)Math.Pow(2, button);
+                    switch (keyCount)
+                    {
+                        case 4:
+                            button = (int.Parse(obj[0]) / 32 - 2) / 4;
+                            buttonValue = (int)Math.Pow(2, button);
+                            break;
+                        case 7:
+                            button = (int.Parse(obj[0]) / 36 - 1) / 2;
+                            buttonValue = (int)Math.Pow(2, button);
+                            break;
+                    }
 
                     if (obj[5].Split(':').Length - 1 == 5) // : 개수가 5개면 롱노트
                     {
@@ -93,8 +107,12 @@ namespace osu2kshoot
 
                     if (IsTiming(int.Parse(obj[2]))) // 이전노트와 같은 타이밍
                     {
+                        // 노트 추가
                         if (rgo.Notes.Count == 0) // 첫 노트
+                        {
                             rgo.Notes.Add(buttonValue + LongNoteValue(keyCount));
+                            osu.FirstNoteTiming = (int)currentTiming;
+                        }
                         else
                             rgo.Notes[rgo.Notes.Count - 1] += buttonValue + LongNoteValue(keyCount);
                     }
@@ -105,10 +123,18 @@ namespace osu2kshoot
                             if (currentTiming > int.Parse(obj[2]))
                                 break;
                             rgo.Notes.Add(LongNoteValue(keyCount));
+                            osu.LastNoteTiming = (int)currentTiming;
                             currentTiming += osu.OneTickTiming;
                             LongNoteEndCheck(keyCount);
                         }
-                        rgo.Notes[rgo.Notes.Count - 1] += buttonValue + LongNoteValue(keyCount);
+                        // 노트 추가
+                        if (rgo.Notes.Count == 0) // 첫 노트
+                        {
+                            rgo.Notes.Add(buttonValue + LongNoteValue(keyCount));
+                            osu.FirstNoteTiming = (int)currentTiming;
+                        }
+                        else
+                            rgo.Notes[rgo.Notes.Count - 1] += buttonValue + LongNoteValue(keyCount);
                     }
                 }
                 else
@@ -142,6 +168,10 @@ namespace osu2kshoot
                     {
                         osu.Creator = line.Replace("Creator:", "");
                     }
+                    else if (line.Contains("Version:"))
+                    {
+                        osu.BeatMapVersion = line.Replace("Version:", "");
+                    }
                     else if (line.Contains("[TimingPoints]"))
                     {
                         timingPoints = true;
@@ -156,6 +186,7 @@ namespace osu2kshoot
             fs.Close();
             #endregion
 
+
             #region RhythmGameObjectsToKShoot
             kshoot.Title = osu.Title;
             kshoot.Artist = osu.Artist;
@@ -163,23 +194,35 @@ namespace osu2kshoot
             kshoot.Jacket = jacketDirectoryTextBox.Text;
             kshoot.Illustrator = illustratorTextBox.Text;
             kshoot.Difficulty = difficultyComboBox.SelectedIndex;
-            kshoot.Level = int.Parse(levelTextBox.Text);
+            if (autoLevelCheckBox.Checked)
+                kshoot.Level = (int)(osu.NoteCount * 10000 / (double)(osu.LastNoteTiming - osu.FirstNoteTiming) / keyCount);
+            else
+                kshoot.Level = int.Parse(levelTextBox.Text);
             kshoot.T = osu.BPM;
             kshoot.M = musicDirectoryTextBox.Text;
-            kshoot.MVol = 80;
+            kshoot.MVol = 75;
             kshoot.O = osu.Offset;
             kshoot.Bg = backgroundComboBox.SelectedIndex;
             kshoot.Layer = layerComboBox.SelectedIndex;
             kshoot.Po = 0;
             kshoot.Plength = 15000;
-            kshoot.PFilterGain = 0;
+            kshoot.PFilterGain = 50;
+            kshoot.FilterType = "peak";
             kshoot.ChokkakuAutoVol = 0;
-            kshoot.ChokkakuVol = 0;
+            kshoot.ChokkakuVol = 50;
             kshoot.Icon = iconDirectoryTextBox.Text;
-            kshoot.Ver = "160";
+            kshoot.Ver = "167";
             kshoot.Beat = "4/4";
-            FileStream fs2 = new FileStream($"[converted]{kshoot.Title}.ksh", FileMode.Create);
-            StreamWriter sw = new StreamWriter(fs2, Encoding.UTF8);
+
+            /*FileStream fs2 = new FileStream($"[converted]{kshoot.Title} {osu.BeatMapVersion}.ksh", FileMode.Create);
+            BinaryWriter bw = new BinaryWriter(fs2, Encoding.UTF8);
+            bw.Write(new byte[] { 0xEF, 0xBB, 0xBF });
+            bw.Flush();
+            bw.Close();
+            fs2.Close();*/
+
+            FileStream fs3 = new FileStream($"[converted]{kshoot.Title} {osu.BeatMapVersion}.ksh", FileMode.Create);
+            StreamWriter sw = new StreamWriter(fs3, Encoding.UTF8);
             sw.WriteLine($"title={kshoot.Title}");
             sw.WriteLine($"artist={kshoot.Artist}");
             sw.WriteLine($"effect={kshoot.Effect}");
@@ -196,6 +239,7 @@ namespace osu2kshoot
             sw.WriteLine($"po={kshoot.Po}");
             sw.WriteLine($"plength={kshoot.Plength}");
             sw.WriteLine($"pfiltergain={kshoot.PFilterGain}");
+            sw.WriteLine($"filtertype={kshoot.FilterType}");
             sw.WriteLine($"chokkakuautovol={kshoot.ChokkakuAutoVol}");
             sw.WriteLine($"chokkakuvol={kshoot.ChokkakuVol}");
             sw.WriteLine($"icon={kshoot.Icon}");
@@ -203,15 +247,21 @@ namespace osu2kshoot
             sw.WriteLine("--");
             sw.WriteLine($"beat={kshoot.Beat}");
             sw.WriteLine($"t={kshoot.T}");
+            sw.WriteLine("0000|00|--");
             for (int i = 0; i < rgo.Notes.Count; i++)
             {
                 if (i % 16 == 0)
                     sw.WriteLine("--");
                 sw.WriteLine(NoteParse(keyCount, rgo.Notes[i], co));
+                if (i == rgo.Notes.Count - 1)
+                {
+
+                }
             }
+
             sw.Flush();
             sw.Close();
-            fs2.Close();
+            fs3.Close();
             #endregion
         }
 
@@ -249,14 +299,13 @@ namespace osu2kshoot
         {
             Random random = new Random();
             bool[] button = new bool[keyCount * 2];
-            bool[] knobSustain = new bool[2];
             int temp = noteNum;
             string str = string.Empty;
             for (int i = 0; i < keyCount * 2; i++)
             {
-                if (temp >= (int)Math.Pow(2, keyCount * 2 - i))
+                if (temp >= (int)Math.Pow(2, keyCount * 2 - 1 - i))
                 {
-                    temp -= (int)Math.Pow(2, keyCount * 2 - i);
+                    temp -= (int)Math.Pow(2, keyCount * 2 - 1 - i);
                     button[keyCount * 2 - 1 - i] = true;
                 }
             }
@@ -397,71 +446,10 @@ namespace osu2kshoot
                 iconDirectoryTextBox.Text = openIconFileDialog.FileName;
             }
         }
-    }
 
-    public class Osu
-    {
-        public int Version;
-        public string AudioFileName;
-        public string Title;
-        public string Artist;
-        public string Creator;
-        public int Offset;
-        public double OneBeatTiming;
-        public double OneTickTiming;
-        public int BPM;
-        public int[] LongNoteEndTiming;
-
-        public Osu()
+        private void AutoLevelCheckBox_CheckedChanged(object sender, EventArgs e)
         {
-        }
-    }
-
-    public class RhythmGameObjects
-    {
-        public int KeyCount; // 4,5,6,7
-        public int BPM; // 130,140,150
-        public int BeatCount; // 16, 24, 32
-        public List<int> Notes = new List<int>(); // 0:빈 공간, 1~:노트 나오는 번호
-
-        public RhythmGameObjects()
-        {
-
-        }
-    }
-
-    public class KShoot
-    {
-        public string[] Difficulties = { "NOV", "ADV", "EXH", "MXM" };
-        public string[] DifficultiesKS = { "light", "challenge", "extended", "infinite" };
-        public string[] BackGrounds = { "sunset", "desert" };
-        public string[] Layers = { "arrow", "smoke" };
-
-        public string Title;
-        public string Artist;
-        public string Effect;
-        public string Jacket;
-        public string Illustrator;
-        public int Difficulty;
-        public int Level;
-        public int T;
-        public string M;
-        public int MVol;
-        public int O;
-        public int Bg;
-        public int Layer;
-        public int Po;
-        public int Plength;
-        public int PFilterGain;
-        public int ChokkakuAutoVol;
-        public int ChokkakuVol;
-        public string Icon;
-        public string Ver;
-        public string Beat;
-
-        public KShoot()
-        {
-
+            levelTextBox.Enabled = autoLevelCheckBox.Checked ? false : true;
         }
     }
 }

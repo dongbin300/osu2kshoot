@@ -58,6 +58,7 @@
             this.fourRadioButton = new System.Windows.Forms.RadioButton();
             this.sevenRadioButton = new System.Windows.Forms.RadioButton();
             this.sevenRadioButton2 = new System.Windows.Forms.RadioButton();
+            this.autoLevelCheckBox = new System.Windows.Forms.CheckBox();
             this.SuspendLayout();
             // 
             // label1
@@ -115,6 +116,7 @@
             this.jacketDirectoryTextBox.Name = "jacketDirectoryTextBox";
             this.jacketDirectoryTextBox.Size = new System.Drawing.Size(100, 21);
             this.jacketDirectoryTextBox.TabIndex = 5;
+            this.jacketDirectoryTextBox.Text = ".png";
             // 
             // label3
             // 
@@ -131,6 +133,7 @@
             this.illustratorTextBox.Name = "illustratorTextBox";
             this.illustratorTextBox.Size = new System.Drawing.Size(100, 21);
             this.illustratorTextBox.TabIndex = 5;
+            this.illustratorTextBox.Text = "_";
             // 
             // label4
             // 
@@ -152,6 +155,7 @@
             // 
             // levelTextBox
             // 
+            this.levelTextBox.Enabled = false;
             this.levelTextBox.Location = new System.Drawing.Point(69, 129);
             this.levelTextBox.Name = "levelTextBox";
             this.levelTextBox.Size = new System.Drawing.Size(100, 21);
@@ -172,6 +176,7 @@
             this.musicDirectoryTextBox.Name = "musicDirectoryTextBox";
             this.musicDirectoryTextBox.Size = new System.Drawing.Size(100, 21);
             this.musicDirectoryTextBox.TabIndex = 5;
+            this.musicDirectoryTextBox.Text = ".mp3";
             // 
             // label7
             // 
@@ -206,6 +211,7 @@
             this.iconDirectoryTextBox.Name = "iconDirectoryTextBox";
             this.iconDirectoryTextBox.Size = new System.Drawing.Size(100, 21);
             this.iconDirectoryTextBox.TabIndex = 5;
+            this.iconDirectoryTextBox.Text = ".png";
             // 
             // difficultyComboBox
             // 
@@ -303,11 +309,25 @@
             this.sevenRadioButton2.Text = "7K(버튼+FX+노브)";
             this.sevenRadioButton2.UseVisualStyleBackColor = true;
             // 
+            // autoLevelCheckBox
+            // 
+            this.autoLevelCheckBox.AutoSize = true;
+            this.autoLevelCheckBox.Checked = true;
+            this.autoLevelCheckBox.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.autoLevelCheckBox.Location = new System.Drawing.Point(175, 134);
+            this.autoLevelCheckBox.Name = "autoLevelCheckBox";
+            this.autoLevelCheckBox.Size = new System.Drawing.Size(48, 16);
+            this.autoLevelCheckBox.TabIndex = 8;
+            this.autoLevelCheckBox.Text = "자동";
+            this.autoLevelCheckBox.UseVisualStyleBackColor = true;
+            this.autoLevelCheckBox.CheckedChanged += new System.EventHandler(this.AutoLevelCheckBox_CheckedChanged);
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 12F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(393, 264);
+            this.Controls.Add(this.autoLevelCheckBox);
             this.Controls.Add(this.sevenRadioButton2);
             this.Controls.Add(this.sevenRadioButton);
             this.Controls.Add(this.fourRadioButton);
@@ -335,7 +355,7 @@
             this.Controls.Add(this.osuDirectoryTextBox);
             this.Controls.Add(this.label1);
             this.Name = "Form1";
-            this.Text = "osu2kshoot";
+            this.Text = "osu2kshoot v1.0";
             this.Load += new System.EventHandler(this.Form1_Load);
             this.ResumeLayout(false);
             this.PerformLayout();
@@ -374,6 +394,7 @@
         private System.Windows.Forms.RadioButton fourRadioButton;
         private System.Windows.Forms.RadioButton sevenRadioButton;
         private System.Windows.Forms.RadioButton sevenRadioButton2;
+        private System.Windows.Forms.CheckBox autoLevelCheckBox;
     }
 }
 
